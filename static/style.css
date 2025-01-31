@@ -4,6 +4,7 @@ body {
     padding: 0;
     background-color: #f9f9f9;
 }
+
 header {
     background-color: #4CAF50;
     color: white;
@@ -13,6 +14,7 @@ header {
     align-items: center;
     position: relative;
 }
+
 .menu-button {
     background: none;
     border: none;
@@ -20,6 +22,7 @@ header {
     font-size: 1.5rem;
     cursor: pointer;
 }
+
 .menu {
     display: none;
     position: absolute;
@@ -30,6 +33,7 @@ header {
     border-radius: 0 0 5px 5px;
     overflow: hidden;
 }
+
 .menu a {
     display: block;
     padding: 1rem;
@@ -37,32 +41,55 @@ header {
     text-decoration: none;
     border-bottom: 1px solid #0e590c;
 }
+
 .menu a:hover {
     background-color: #0e590c;
 }
+
 .title {
     text-align: center;
     flex-grow: 1;
 }
+
 .search-bar {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
+
 .search-bar input {
     padding: 0.5rem;
     font-size: 1rem;
     width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
+
+.search-bar button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.search-bar button:hover {
+    background-color: #45a049;
+}
+
 .categories {
     margin: 1rem;
 }
+
 .category {
     margin-bottom: 1rem;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: white;
 }
+
 .category-header {
     padding: 0.5rem 1rem;
     display: flex;
@@ -71,26 +98,49 @@ header {
     cursor: pointer;
     background-color: #e8f5e9;
 }
+
 .category-header:hover {
     background-color: #dcedc8;
 }
+
 .items {
     display: none;
     padding: 1rem;
 }
+
 .item {
-    display: inline-block;
-    width: 150px;
-    margin: 0.5rem;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 5px;
-    text-align: center;
     background-color: #f1f1f1;
+    position: relative;
+    width: fit-content; /* Adjust width to fit content */
 }
+
+.item::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
+    background-color: green; /* Default color */
+}
+
+.item.expiring::before {
+    background-color: yellow;
+}
+
+.item.expired::before {
+    background-color: red;
+}
+
 .item p {
-    margin: 0.5rem 0;
+    margin: 0;
 }
+
 .modal {
     display: none;
     position: fixed;
@@ -102,14 +152,13 @@ header {
     justify-content: center;
     align-items: center;
 }
+
 .modal-content {
     background-color: white;
     padding: 2rem;
     border-radius: 5px;
     text-align: center;
 }
-
-
 
 /*ANAL*/
 /* Основные стили для страницы */
@@ -170,4 +219,16 @@ main {
 canvas {
     max-width: 100%;
     height: auto;
+}
+
+#searchResults {
+    margin: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    padding: 1rem;
+}
+
+#searchResults h2 {
+    margin-top: 0;
 }

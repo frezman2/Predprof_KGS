@@ -3,6 +3,7 @@ import cv2
 import threading
 import sqlite3
 import json
+from datetime import datetime
 
 app = Flask(__name__, static_folder='static')
 qr_data = None
@@ -25,6 +26,14 @@ def ensure_database():
             measurement_type TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS product_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT,
+            action TEXT,
+            timestamp TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -39,8 +48,33 @@ def save_to_database(product_data):
             VALUES (:id, :name, :type, :manufacture_date, :expiry_date, :weight, :nutrition_value, :measurement_type)
         ''', product_data)
         conn.commit()
+        # Log the addition
+        cursor.execute('''
+            INSERT INTO product_logs (product_id, action, timestamp)
+            VALUES (?, ?, ?)
+        ''', (product_data['id'], 'added', datetime.now().date().isoformat()))
+        conn.commit()
     except sqlite3.IntegrityError:
         print(f"Продукт с ID {product_data['id']} уже существует в базе данных.")
+    finally:
+        conn.close()
+
+# Функция для удаления данных из базы данных
+def delete_from_database(product_id):
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+        conn.commit()
+        # Log the deletion
+        cursor.execute('''
+            INSERT INTO product_logs (product_id, action, timestamp)
+            VALUES (?, ?, ?)
+        ''', (product_id, 'deleted', datetime.now().isoformat()))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Ошибка при удалении продукта: {e}")
     finally:
         conn.close()
 
@@ -123,12 +157,31 @@ def get_products_by_category():
 
     conn.close()
     return categories
-    
+
+# Функция для получения логов из базы данных
+def get_product_logs():
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    # Получаем все логи
+    cursor.execute('SELECT * FROM product_logs ORDER BY timestamp DESC')
+    logs = cursor.fetchall()
+
+    conn.close()
+    return logs
+
 # Маршрут для получения данных
 @app.route('/get_products')
 def get_products():
     categories = get_products_by_category()
     return jsonify(categories)
+
+# Маршрут для получения логов
+@app.route('/get_logs')
+def get_logs():
+    logs = get_product_logs()
+    return jsonify(logs)
 
 # Маршрут для видеопотока
 @app.route('/video_feed')

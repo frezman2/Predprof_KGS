@@ -78,7 +78,6 @@ function checkQRCode() {
 }
 
 // Функция для загрузки товаров из базы данных
-// Функция для загрузки товаров из базы данных
 function loadProducts() {
     fetch('/get_products')
         .then(response => response.json())
@@ -126,10 +125,21 @@ function loadProducts() {
                     products.forEach(product => {
                         const item = document.createElement('div');
                         item.className = 'item';
+
+                        // Determine the expiry status
+                        const currentDate = new Date();
+                        const expiryDate = new Date(product.expiry_date);
+                        const timeDiff = expiryDate - currentDate;
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                        if (daysDiff <= 0) {
+                            item.classList.add('expired');
+                        } else if (daysDiff <= 7) {
+                            item.classList.add('expiring');
+                        }
+
                         item.innerHTML = `
                             <p>${product.name}</p>
-                            <p>Срок годности: ${product.expiry_date}</p>
-                            <p>Вес: ${product.weight} ${product.measurement_type}</p>
                         `;
                         categoryElement.appendChild(item);
                     });
@@ -146,12 +156,71 @@ function loadProducts() {
         });
 }
 
-// Загружаем товары при загрузке страницы
-document.addEventListener("DOMContentLoaded", function () {
-    loadProducts();
-});
+// Функция для поиска товаров по названию
+function searchProducts() {
+    const searchInput = document.getElementById('search').value.toLowerCase();
+    const categories = document.querySelectorAll('.category');
+    const searchResults = document.getElementById('searchResults');
+
+    // Clear previous search results
+    searchResults.innerHTML = '';
+
+    // Hide all categories
+    categories.forEach(category => {
+        category.style.display = 'none';
+    });
+
+    // Show search results
+    searchResults.style.display = 'block';
+
+    // Fetch all products
+    fetch('/get_products')
+        .then(response => response.json())
+        .then(data => {
+            let found = false;
+            for (const [category, products] of Object.entries(data)) {
+                products.forEach(product => {
+                    if (product.name.toLowerCase().includes(searchInput)) {
+                        found = true;
+                        const item = document.createElement('div');
+                        item.className = 'item';
+
+                        // Determine the expiry status
+                        const currentDate = new Date();
+                        const expiryDate = new Date(product.expiry_date);
+                        const timeDiff = expiryDate - currentDate;
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                        if (daysDiff <= 0) {
+                            item.classList.add('expired');
+                        } else if (daysDiff <= 7) {
+                            item.classList.add('expiring');
+                        }
+
+                        item.innerHTML = `
+                            <p>${product.name}</p>
+                        `;
+                        searchResults.appendChild(item);
+                    }
+                });
+            }
+
+            if (!found) {
+                searchResults.innerHTML = '<p style="opacity: 0.5;">Товаров не найдено</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке данных:', error);
+            searchResults.innerHTML = '<p style="opacity: 0.5;">Ошибка при поиске товаров</p>';
+        });
+}
 
 // Загружаем товары при загрузке страницы
 document.addEventListener("DOMContentLoaded", function () {
     loadProducts();
+    loadLogs();
+    document.getElementById('searchButton').addEventListener('click', searchProducts);
 });
+
+
+

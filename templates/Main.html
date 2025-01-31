@@ -12,8 +12,9 @@
         <h1 class="title">SmartFridge</h1>
         <div class="search-bar">
             <input type="text" id="search" placeholder="Поиск товаров...">
+            <button id="searchButton">Поиск</button>
             <button id="addItem">Добавить товар</button>
-        </div>
+        </div>    
         <div class="menu" id="menu">
             <a href="analytics.html">Аналитика</a>
             <a href="#settings">Настройки аккаунта</a>
@@ -30,7 +31,7 @@
                 <p style="opacity: 0.5;">Товаров нет</p>
             </div>
         </div>
-
+    
         <div class="category">
             <div class="category-header">
                 <span>Молочные продукты</span>
@@ -40,7 +41,7 @@
                 <p style="opacity: 0.5;">Товаров нет</p>
             </div>
         </div>
-
+    
         <div class="category">
             <div class="category-header">
                 <span>Фрукты и овощи</span>
@@ -50,7 +51,7 @@
                 <p style="opacity: 0.5;">Товаров нет</p>
             </div>
         </div>
-
+    
         <div class="category">
             <div class="category-header">
                 <span>Мясо и птица</span>
@@ -60,6 +61,10 @@
                 <p style="opacity: 0.5;">Товаров нет</p>
             </div>
         </div>
+    </div> 
+
+    <div id="searchResults" style="display: none;">
+        <h2>Результаты поиска</h2>
     </div>
 
     <div class="modal" id="qrModal">
