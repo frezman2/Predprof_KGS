@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <button class="menu-button" id="menuButton">&#9776;</button>
+        <h1 class="title">SmartFridge</h1>
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Поиск товаров...">
+            <button id="addItem">Добавить товар</button>
+        </div>
+        <div class="menu" id="menu">
+            <a href="analytics.html">Аналитика</a>
+            <a href="#settings">Настройки аккаунта</a>
+        </div>
+    </header>
+
+    <div class="categories">
+        <div class="category">
+            <div class="category-header">
+                <span>Хлебобулочные изделия</span>
+                <span>&#9662;</span>
+            </div>
+            <div class="items" id="bread">
+                <p style="opacity: 0.5;">Товаров нет</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <span>Молочные продукты</span>
+                <span>&#9662;</span>
+            </div>
+            <div class="items" id="dairy">
+                <p style="opacity: 0.5;">Товаров нет</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <span>Фрукты и овощи</span>
+                <span>&#9662;</span>
+            </div>
+            <div class="items" id="fruits">
+                <p style="opacity: 0.5;">Товаров нет</p>
+            </div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <span>Мясо и птица</span>
+                <span>&#9662;</span>
+            </div>
+            <div class="items" id="meat">
+                <p style="opacity: 0.5;">Товаров нет</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <h2>Сканировать QR-код</h2>
+            <img src="{{ url_for('video_feed') }}" width="640" height="480"/>
+            <button id="closeModal">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="modal" id="qrDetectedModal">
+        <div class="modal-content">
+            <h2>QR-код отсканирован</h2>
+            <p id="qrData"></p>
+            <button id="okButton">ОК</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

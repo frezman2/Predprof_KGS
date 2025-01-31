@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика - SmartFridge</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключение Chart.js -->
+    <script src="analytics.js" defer></script> <!-- Подключение скрипта -->
+</head>
+<body>
+    <header>
+        <button class="menu-button" id="menuButton_anal">&#9776;</button>
+        <h1 class="title">SmartFridge</h1>
+        <div class="menu" id="menu_anal">
+            <a href="Main.html">Главная</a>
+            <a href="#settings">Настройки аккаунта</a>
+        </div>
+    </header>
+
+    <main>
+        <h2>Страница аналитики</h2>
+        <div class="filters">
+            <label for="date">Выберите дату:</label>
+            <input type="date" id="date">
+
+            <label for="typeFilter">Фильтр:</label>
+            <select id="typeFilter">
+                <option value="added">Добавлено</option>
+                <option value="removed">Удалено</option>
+            </select>
+        </div>
+
+        <canvas id="analyticsChart" width="400" height="200"></canvas>
+    </main>
+</body>
+</html>
