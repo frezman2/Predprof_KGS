@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, redirect, url_for, jsonify
+from flask import Flask, Response, render_template, redirect, url_for, jsonify, request
 import cv2
 import threading
 import sqlite3
@@ -158,6 +158,26 @@ def get_products_by_category():
     conn.close()
     return categories
 
+def delete_from_database(product_id):
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+        conn.commit()
+        # Логируем удаление
+        cursor.execute('''
+            INSERT INTO product_logs (product_id, action, timestamp)
+            VALUES (?, ?, ?)
+        ''', (product_id, 'deleted', datetime.now().isoformat()))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Ошибка при удалении продукта: {e}")
+        return False
+    finally:
+        conn.close()
+    return True
+
 # Функция для получения логов из базы данных
 def get_product_logs():
     db_name = "products.db"
@@ -170,6 +190,25 @@ def get_product_logs():
 
     conn.close()
     return logs
+
+# Маршрут для удаления продукта
+@app.route('/delete_product', methods=['POST'])
+def delete_product():
+    data = request.json
+    qr_data = data.get('qr_data')
+
+    if not qr_data:
+        return jsonify({"status": "error", "message": "Необходимо предоставить данные QR-кода"}), 400
+
+    # Декодируем данные QR-кода
+    product_data = decode_qr_data(qr_data)
+    if not product_data:
+        return jsonify({"status": "error", "message": "Ошибка декодирования данных QR-кода"}), 400
+
+    # Удаляем продукт из базы данных
+    delete_from_database(product_data['id'])
+
+    return
 
 # Маршрут для получения данных
 @app.route('/get_products')
@@ -192,11 +231,6 @@ def video_feed():
 @app.route('/')
 def index():
     return render_template('main.html')
-
-# Страница успешного сканирования
-@app.route('/success')
-def success():
-    return render_template('success.html')
 
 # Маршрут для проверки обнаружения QR-кода
 @app.route('/qr_detected')
