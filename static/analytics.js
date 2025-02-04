@@ -36,3 +36,36 @@ function updateChart() {
 // Слушатели событий
 dateInput.addEventListener('change', updateChart);
 typeFilter.addEventListener('change', updateChart);
+
+$(document).ready(function() {
+    $.getJSON('/get_stats', function(data) {
+        let ctx = document.getElementById("myChart").getContext("2d");
+        let myChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: data.dates,
+                datasets: [
+                    {
+                        label: "Добавленные",
+                        data: data.added,
+                        backgroundColor: "rgba(153,205,1,0.6)",
+                    },
+                    {
+                        label: "Удаленные",
+                        data: data.deleted,
+                        backgroundColor: "rgba(155,153,10,0.6)",
+                    },
+                ],
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    });
+});

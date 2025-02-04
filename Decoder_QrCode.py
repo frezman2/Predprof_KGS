@@ -3,7 +3,7 @@ import cv2
 import threading
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime,timedelta
 
 app = Flask(__name__, static_folder='static')
 qr_data = None
@@ -71,7 +71,7 @@ def delete_from_database(product_id):
         cursor.execute('''
             INSERT INTO product_logs (product_id, action, timestamp)
             VALUES (?, ?, ?)
-        ''', (product_id, 'deleted', datetime.now().isoformat()))
+        ''', (product_id, 'deleted', datetime.now().date().isoformat()))
         conn.commit()
     except sqlite3.Error as e:
         print(f"Ошибка при удалении продукта: {e}")
@@ -178,6 +178,51 @@ def delete_from_database(product_id):
         conn.close()
     return True
 
+# Функция для получения количества добавленных и удаленных продуктов за последние 7 дней
+def get_product_stats():
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    # Получаем текущую дату и дату 7 дней назад
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+
+    # Получаем количество добавленных продуктов за последние 7 дней
+    cursor.execute('''
+        SELECT DATE(timestamp) as date, COUNT(*) as count
+        FROM product_logs
+        WHERE action = 'added' AND timestamp >= ? AND timestamp <= ?
+        GROUP BY DATE(timestamp)
+    ''', (start_date.isoformat(), end_date.isoformat()))
+    added_stats = cursor.fetchall()
+
+    # Получаем количество удаленных продуктов за последние 7 дней
+    cursor.execute('''
+        SELECT DATE(timestamp) as date, COUNT(*) as count
+        FROM product_logs
+        WHERE action = 'deleted' AND timestamp >= ? AND timestamp <= ?
+        GROUP BY DATE(timestamp)
+    ''', (start_date.isoformat(), end_date.isoformat()))
+    deleted_stats = cursor.fetchall()
+
+    conn.close()
+
+    # Преобразуем данные в удобный для использования формат
+    added_data = {date: count for date, count in added_stats}
+    deleted_data = {date: count for date, count in deleted_stats}
+
+    # Заполняем данные для всех дней, даже если в какой-то день не было действий
+    dates = [(start_date + timedelta(days=i)).date().isoformat() for i in range(7)]
+    added_counts = [added_data.get(date, 0) for date in dates]
+    deleted_counts = [deleted_data.get(date, 0) for date in dates]
+
+    return {
+        "dates": dates,
+        "added": added_counts,
+        "deleted": deleted_counts
+    }
+
 # Функция для получения логов из базы данных
 def get_product_logs():
     db_name = "products.db"
@@ -210,6 +255,12 @@ def delete_product():
 
     return
 
+# Маршрут для получения статистики
+@app.route('/get_stats')
+def get_stats():
+    stats = get_product_stats()
+    return jsonify(stats)
+
 # Маршрут для получения данных
 @app.route('/get_products')
 def get_products():
@@ -230,7 +281,15 @@ def video_feed():
 # Главная страница
 @app.route('/')
 def index():
-    return render_template('main.html')
+    return render_template('Main.html')
+
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
+@app.route('/Main')
+def Main():
+    return render_template('Main.html')
 
 # Маршрут для проверки обнаружения QR-кода
 @app.route('/qr_detected')
