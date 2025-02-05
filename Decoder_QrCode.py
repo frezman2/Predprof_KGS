@@ -3,7 +3,7 @@ import cv2
 import threading
 import sqlite3
 import json
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static')
 qr_data = None
@@ -258,8 +258,50 @@ def delete_product():
 # Маршрут для получения статистики
 @app.route('/get_stats')
 def get_stats():
-    stats = get_product_stats()
-    return jsonify(stats)
+    days = int(request.args.get('days', 7))  # По умолчанию за последние 7 дней
+
+    # Получаем текущую дату и дату N дней назад
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    # Получаем количество добавленных продуктов за указанный период
+    cursor.execute('''
+        SELECT DATE(timestamp) as date, COUNT(*) as count
+        FROM product_logs
+        WHERE action = 'added' AND timestamp >= ? AND timestamp <= ?
+        GROUP BY DATE(timestamp)
+    ''', (start_date.isoformat(), end_date.isoformat()))
+    added_stats = cursor.fetchall()
+
+    # Получаем количество удаленных продуктов за указанный период
+    cursor.execute('''
+        SELECT DATE(timestamp) as date, COUNT(*) as count
+        FROM product_logs
+        WHERE action = 'deleted' AND timestamp >= ? AND timestamp <= ?
+        GROUP BY DATE(timestamp)
+    ''', (start_date.isoformat(), end_date.isoformat()))
+    deleted_stats = cursor.fetchall()
+
+    conn.close()
+
+    # Преобразуем данные в удобный для использования формат
+    added_data = {date: count for date, count in added_stats}
+    deleted_data = {date: count for date, count in deleted_stats}
+
+    # Заполняем данные для всех дней, даже если в какой-то день не было действий
+    dates = [(start_date + timedelta(days=i)).date().isoformat() for i in range(days)]
+    added_counts = [added_data.get(date, 0) for date in dates]
+    deleted_counts = [deleted_data.get(date, 0) for date in dates]
+
+    return jsonify({
+        "dates": dates,
+        "added": added_counts,
+        "deleted": deleted_counts
+    })
 
 # Маршрут для получения данных
 @app.route('/get_products')

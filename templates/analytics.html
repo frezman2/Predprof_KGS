@@ -5,116 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Аналитика - SmartFridge</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключение Chart.js -->
-    <script src="{{ url_for('static', filename='analytics.js') }}" defer></script> <!-- Подключение скрипта -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" type="text/css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js" type="text/javascript"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.2.2/Chart.min.js"></script>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Подключение jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
-    <header>
-        <button class="menu-button" id="menuButton_anal">&#9776;</button>
-        <h1 class="title">SmartFridge</h1>
-        <div class="menu" id="menu_anal">
-            <a href="{{ url_for('Main') }}">Главная</a>
-            <a href="#settings">Настройки аккаунта</a>
-        </div>
-    </header>
+    {% include 'header.html' %} <!-- Подключаем шапку -->
 
-    <main>
+    <main class="container mt-5 pt-4"> <!-- Добавляем отступ сверху для контента -->
         <h2>Страница аналитики</h2>
-        <div class="filters">
-            <label for="date">Выберите дату:</label>
-            <input type="date" id="date">
-
-            <label for="typeFilter">Фильтр:</label>
-            <select id="typeFilter">
-                <option value="added">Добавлено</option>
-                <option value="removed">Удалено</option>
+        <div class="filters mb-4">
+            <label for="timeRange">Выберите промежуток времени:</label>
+            <select id="timeRange">
+                <option value="7">За последние 7 дней</option>
+                <option value="30">За последний месяц</option>
+                <option value="365">За последний год</option>
             </select>
         </div>
-        <div class="container">
-            <h2>Line Chart</h2>
-            <div>
-                <canvas id="myChart"></canvas>
-            </div>
-        </div>
 
-        <canvas id="analyticsChart" width="400" height="200"></canvas>
-        <script>const dateInput = document.getElementById('date');
-            const typeFilter = document.getElementById('typeFilter');
-            const ctx = document.getElementById('analyticsChart').getContext('2d');
-            
-            const menuButton_anal = document.getElementById('menuButton_anal');
-            const menu_anal = document.getElementById('menu_anal');
-            menu_anal.style.visibility = 'hidden';
-            menuButton_anal.addEventListener('click', () => {
-                if (menu_anal.style.display === 'block') {
-                    menu_anal.style.visibility = 'visible';
-                    menu_anal.style.display = 'none';
-                } else {
-                    menu_anal.style.display = 'block';
-                    menu_anal.style.visibility = 'visible';
-                }
-            });
-            
-            // Пример данных
-            const sampleData = {
-                added: [12, 19, 3, 5, 2, 3],
-                removed: [8, 15, 2, 6, 4, 7],
-                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн']
-            };
-            
-            // Инициализация диаграммы
-            
-            
-            // Обновление диаграммы при изменении фильтра или даты
-            function updateChart() {
-                const selectedType = typeFilter.value;
-                chart.data.datasets[0].label = selectedType === 'added' ? 'Добавлено' : 'Удалено';
-                chart.data.datasets[0].data = selectedType === 'added' ? sampleData.added : sampleData.removed;
-                chart.update();
-            }
-            
-            // Слушатели событий
-            dateInput.addEventListener('change', updateChart);
-            typeFilter.addEventListener('change', updateChart);
-            
-            $(document).ready(function() {
-                $.getJSON('/get_stats', function(data) {
-                    let ctx = document.getElementById("myChart").getContext("2d");
-                    let myChart = new Chart(ctx, {
-                        type: "line",
-                        data: {
-                            labels: data.dates,
-                            datasets: [
-                                {
-                                    label: "Добавленные",
-                                    data: data.added,
-                                    backgroundColor: "rgba(153,205,1,0.6)",
-                                },
-                                {
-                                    label: "Удаленные",
-                                    data: data.deleted,
-                                    backgroundColor: "rgba(155,153,10,0.6)",
-                                },
-                            ],
-                        },
-                        options: {
-                            scales: {
-                                yAxes: [{
-                                    ticks: {
-                                        beginAtZero: true
-                                    }
-                                }]
-                            }
-                        }
-                    });
-                });
-            });
-            </script>
+        <div class="chart-container">
+            <canvas id="myChart"></canvas> <!-- Диаграмма -->
+        </div>
     </main>
+
+    <script src="{{ url_for('static', filename='analytics.js') }}"></script>
 </body>
 </html>
