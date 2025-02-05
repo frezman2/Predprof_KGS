@@ -98,27 +98,6 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// Menu functionality
-const menuButton = document.getElementById('menuButton');
-const menu = document.getElementById('menu');
-menu.style.visibility = 'hidden';
-menuButton.addEventListener('click', () => {
-    if (menu.style.display === 'block') {
-        menu.style.visibility = 'visible';
-        menu.style.display = 'none';
-    } else {
-        menu.style.display = 'block';
-        menu.style.visibility = 'visible';
-    }
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target !== menu && e.target !== menuButton) {
-        menu.style.display = 'none';
-    }
-});
-
-
 // Функция для загрузки товаров из базы данных
 function loadProducts() {
     fetch('/get_products')
@@ -143,27 +122,24 @@ function loadProducts() {
             }
 
             // Если данные есть, распределяем их по категориям
+            const categories = {
+                'Хлебобулочные изделия': document.getElementById('bread'),
+                'Молочные продукты': document.getElementById('dairy'),
+                'Фрукты и овощи': document.getElementById('fruits'),
+                'Мясо и птица': document.getElementById('meat')
+            };
+
+            // Инициализируем все категории сообщением "Товаров нет"
+            for (const categoryElement of Object.values(categories)) {
+                categoryElement.innerHTML = '<p style="opacity: 0.5;">Товаров нет</p>';
+            }
+
+            // Заполняем категории товарами
             for (const [category, products] of Object.entries(data)) {
-                console.log(`Категория: ${category}, Товары:`, products);
+                const categoryElement = categories[category];
+                if (categoryElement && products.length > 0) {
+                    categoryElement.innerHTML = ''; // Очищаем сообщение "Товаров нет"
 
-                let categoryElement;
-                if (category.includes('Хлеб')) {
-                    categoryElement = document.getElementById('bread');
-                } else if (category.includes('Молоч')) {
-                    categoryElement = document.getElementById('dairy');
-                } else if (category.includes('Фрукты') || category.includes('овощи')) {
-                    categoryElement = document.getElementById('fruits');
-                } else if (category.includes('Мясо') || category.includes('птица')) {
-                    categoryElement = document.getElementById('meat');
-                } else {
-                    continue;
-                }
-
-                if (products.length === 0) {
-                    // Если в категории нет товаров, выводим сообщение
-                    categoryElement.innerHTML = '<p style="opacity: 0.5;">Товаров нет</p>';
-                } else {
-                    // Если товары есть, отображаем их
                     products.forEach(product => {
                         const item = document.createElement('div');
                         item.className = 'item';

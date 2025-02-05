@@ -4,34 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Аналитика - SmartFridge</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключение Chart.js -->
-    <script src="analytics.js" defer></script> <!-- Подключение скрипта -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Подключение jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
-    <header>
-        <button class="menu-button" id="menuButton_anal">&#9776;</button>
-        <h1 class="title">SmartFridge</h1>
-        <div class="menu" id="menu_anal">
-            <a href="Main.html">Главная</a>
-            <a href="#settings">Настройки аккаунта</a>
-        </div>
-    </header>
+    {% include 'header.html' %} <!-- Подключаем шапку -->
 
-    <main>
+    <main class="container mt-5 pt-4"> <!-- Добавляем отступ сверху для контента -->
         <h2>Страница аналитики</h2>
-        <div class="filters">
-            <label for="date">Выберите дату:</label>
-            <input type="date" id="date">
-
-            <label for="typeFilter">Фильтр:</label>
-            <select id="typeFilter">
-                <option value="added">Добавлено</option>
-                <option value="removed">Удалено</option>
+        <div class="filters mb-4">
+            <label for="timeRange">Выберите промежуток времени:</label>
+            <select id="timeRange">
+                <option value="7">За последние 7 дней</option>
+                <option value="30">За последний месяц</option>
+                <option value="365">За последний год</option>
             </select>
         </div>
 
-        <canvas id="analyticsChart" width="400" height="200"></canvas>
+        <div class="chart-container">
+            <canvas id="myChart"></canvas> <!-- Диаграмма -->
+        </div>
     </main>
+
+    <script src="{{ url_for('static', filename='analytics.js') }}"></script>
 </body>
 </html>

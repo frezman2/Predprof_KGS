@@ -1,0 +1,58 @@
+<!-- templates/header.html -->
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('index') }}">SmartFridge</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('analytics') }}">Аналитика</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#settings">Настройки аккаунта</a>
+                    </li>
+                </ul>
+
+                {% if request.endpoint == 'index' %}
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" id="search" placeholder="Поиск товаров..." aria-label="Search">
+                    <button class="btn btn-outline-light" id="searchButton" type="button">Поиск</button>
+                </form>
+                <button class="btn btn-outline-light ms-2" id="addItem">Добавить товар</button>
+                <button class="btn btn-outline-light ms-2" id="deleteItem">Удалить товар</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Подключение Bootstrap JS и зависимостей -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+<script>
+    // Логика для меню (если нужно)
+    const menuButton = document.getElementById('menuButton');
+    const menu = document.getElementById('menu');
+    if (menuButton && menu) {
+        menuButton.addEventListener('click', () => {
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'block';
+            }
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target !== menu && e.target !== menuButton) {
+                menu.style.display = 'none';
+            }
+        });
+    }
+</script>
