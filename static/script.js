@@ -253,7 +253,7 @@ function loadProducts() {
                     }
 
                     // Добавляем информацию о продукте
-                    item.innerHTML = `<p>${product.name}</p>`;
+                    item.innerHTML = `<p>${product.name} (${product.quantity} шт.)</p>`;
                     item.addEventListener('click', () => {
                         showProductInfo(product);
                     });

@@ -4,10 +4,14 @@ import threading
 import sqlite3
 import json
 from datetime import datetime, timedelta
+import time
 
 app = Flask(__name__, static_folder='static')
 qr_data = None
 qr_detected = False
+# Глобальная переменная для управления потоком сканирования
+scanning_active = False
+
 
 # Функция для создания базы данных и таблицы
 def ensure_database():
@@ -23,7 +27,8 @@ def ensure_database():
             expiry_date TEXT,
             weight TEXT,
             nutrition_value TEXT,
-            measurement_type TEXT
+            measurement_type TEXT,
+            quantity INTEGER DEFAULT 1
         )
     ''')
     cursor.execute('''
@@ -51,12 +56,27 @@ def save_to_database(product_data):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     try:
-        cursor.execute('''
-            INSERT INTO products (id, name, type, manufacture_date, expiry_date, weight, nutrition_value, measurement_type)
-            VALUES (:id, :name, :type, :manufacture_date, :expiry_date, :weight, :nutrition_value, :measurement_type)
-        ''', product_data)
+        # Проверяем, существует ли продукт с таким ID
+        cursor.execute('SELECT * FROM products WHERE id = ?', (product_data['id'],))
+        existing_product = cursor.fetchone()
+
+        if existing_product:
+            # Если продукт существует, увеличиваем количество
+            cursor.execute('''
+                UPDATE products
+                SET quantity = quantity + 1
+                WHERE id = ?
+            ''', (product_data['id'],))
+        else:
+            # Если продукта нет, добавляем его с количеством 1
+            cursor.execute('''
+                INSERT INTO products (id, name, type, manufacture_date, expiry_date, weight, nutrition_value, measurement_type, quantity)
+                VALUES (:id, :name, :type, :manufacture_date, :expiry_date, :weight, :nutrition_value, :measurement_type, 1)
+            ''', product_data)
+
         conn.commit()
-        # Log the addition
+
+        # Логируем добавление
         cursor.execute('''
             INSERT INTO product_logs (product_id, action, timestamp)
             VALUES (?, ?, ?)
@@ -100,15 +120,24 @@ def decode_qr_data(qr_data):
 def generate_frames():
     global qr_data, qr_detected
     camera = cv2.VideoCapture(0)
+
+    if not camera.isOpened():
+        print("Камера не доступна.")
+        return
+
     detector = cv2.QRCodeDetector()
 
     while True:
-        success, frame = camera.read()
-        if not success:
-            print("Failed to grab frame")
-            break
-        else:
+        try:
+            success, frame = camera.read()
+            if not success:
+                print("Не удалось захватить кадр с камеры.")
+                break
+
+            # Переворачиваем кадр для удобства
             frame = cv2.flip(frame, 1)
+
+            # Пытаемся обнаружить QR-код
             data, bbox, _ = detector.detectAndDecode(frame)
 
             if bbox is not None:
@@ -128,14 +157,28 @@ def generate_frames():
                         save_to_database(product_data)
                     break  # Выход из цикла после обнаружения QR-кода
 
+            # Кодируем кадр в формат JPEG
             ret, buffer = cv2.imencode('.jpg', frame)
             if not ret:
-                print("Failed to encode frame")
+                print("Не удалось закодировать кадр.")
                 continue
 
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+            # Добавляем небольшую задержку для стабильности
+            time.sleep(0.1)
+
+        except cv2.error as e:
+            print(f"Ошибка OpenCV: {e}")
+            continue
+        except Exception as e:
+            print(f"Неожиданная ошибка: {e}")
+            break
+
+    # Освобождаем камеру
+    camera.release()
 
 # Функция для получения данных из базы данных
 def get_products_by_category():
@@ -160,7 +203,8 @@ def get_products_by_category():
             "expiry_date": product[4],
             "weight": product[5],
             "nutrition_value": product[6],
-            "measurement_type": product[7]
+            "measurement_type": product[7],
+            "quantity": product[8]
         })
 
     conn.close()
@@ -413,7 +457,11 @@ def get_logs():
 # Маршрут для видеопотока
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    try:
+        return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        print(f"Ошибка в маршруте /video_feed: {e}")
+        return "Ошибка при захвате видео.", 500
 
 # Главная страница
 @app.route('/')
