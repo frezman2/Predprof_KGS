@@ -5,7 +5,7 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="{{ url_for('index') }}">SmartFridge</a>
+            <a class="navbar-brand">SmartFridge</a>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
@@ -15,7 +15,7 @@
                         <a class="nav-link" href="{{ url_for('analytics') }}">Аналитика</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#settings">Настройки аккаунта</a>
+                        <a class="nav-link" href="{{ url_for('shopping_list') }}">Список покупок</a>
                     </li>
                 </ul>
 
@@ -27,32 +27,36 @@
                 <button class="btn btn-outline-light ms-2" id="addItem">Добавить товар</button>
                 <button class="btn btn-outline-light ms-2" id="deleteItem">Удалить товар</button>
                 {% endif %}
+
+                <button class="btn btn-outline-light ms-2" id="notificationsButton" data-bs-toggle="modal" data-bs-target="#notificationsModal">
+                    <i class="bi bi-bell"></i> <!-- Иконка уведомлений из Bootstrap Icons -->
+                    <span id="notificationCount" class="badge bg-danger d-none">0</span> <!-- Бейдж с количеством уведомлений -->
+                </button>
             </div>
         </div>
     </nav>
 </header>
 
+<!-- Модальное окно для уведомлений -->
+<div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationsModalLabel">Уведомления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="notificationsList">
+                <!-- Список уведомлений будет загружен сюда -->
+                <p style="opacity: 0.5;">Нет уведомлений</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Подключение Bootstrap JS и зависимостей -->
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
-<script>
-    // Логика для меню (если нужно)
-    const menuButton = document.getElementById('menuButton');
-    const menu = document.getElementById('menu');
-    if (menuButton && menu) {
-        menuButton.addEventListener('click', () => {
-            if (menu.style.display === 'block') {
-                menu.style.display = 'none';
-            } else {
-                menu.style.display = 'block';
-            }
-        });
-
-        window.addEventListener('click', (e) => {
-            if (e.target !== menu && e.target !== menuButton) {
-                menu.style.display = 'none';
-            }
-        });
-    }
-</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">

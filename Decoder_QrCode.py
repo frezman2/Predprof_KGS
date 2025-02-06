@@ -34,6 +34,14 @@ def ensure_database():
             timestamp TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shopping_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            quantity INTEGER,
+            measurement_type TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -135,19 +143,19 @@ def get_products_by_category():
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
-    # Получаем все продукты, отсортированные по типу
+    # Используем более эффективный запрос
     cursor.execute('SELECT * FROM products ORDER BY type')
     products = cursor.fetchall()
 
-    # Группируем продукты по категориям
     categories = {}
     for product in products:
-        product_type = product[2]  # type находится на индексе 2
+        product_type = product[2]
         if product_type not in categories:
             categories[product_type] = []
         categories[product_type].append({
             "id": product[0],
             "name": product[1],
+            "type": product[2],
             "manufacture_date": product[3],
             "expiry_date": product[4],
             "weight": product[5],
@@ -158,26 +166,6 @@ def get_products_by_category():
     conn.close()
     return categories
 
-def delete_from_database(product_id):
-    db_name = "products.db"
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    try:
-        cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
-        conn.commit()
-        # Логируем удаление
-        cursor.execute('''
-            INSERT INTO product_logs (product_id, action, timestamp)
-            VALUES (?, ?, ?)
-        ''', (product_id, 'deleted', datetime.now().isoformat()))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Ошибка при удалении продукта: {e}")
-        return False
-    finally:
-        conn.close()
-    return True
-
 # Функция для получения количества добавленных и удаленных продуктов за последние 7 дней
 def get_product_stats():
     db_name = "products.db"
@@ -185,14 +173,14 @@ def get_product_stats():
     cursor = conn.cursor()
 
     # Получаем текущую дату и дату 7 дней назад
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=7)
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=6)  # Включаем сегодняшний день
 
     # Получаем количество добавленных продуктов за последние 7 дней
     cursor.execute('''
         SELECT DATE(timestamp) as date, COUNT(*) as count
         FROM product_logs
-        WHERE action = 'added' AND timestamp >= ? AND timestamp <= ?
+        WHERE action = 'added' AND DATE(timestamp) >= ? AND DATE(timestamp) <= ?
         GROUP BY DATE(timestamp)
     ''', (start_date.isoformat(), end_date.isoformat()))
     added_stats = cursor.fetchall()
@@ -201,7 +189,7 @@ def get_product_stats():
     cursor.execute('''
         SELECT DATE(timestamp) as date, COUNT(*) as count
         FROM product_logs
-        WHERE action = 'deleted' AND timestamp >= ? AND timestamp <= ?
+        WHERE action = 'deleted' AND DATE(timestamp) >= ? AND DATE(timestamp) <= ?
         GROUP BY DATE(timestamp)
     ''', (start_date.isoformat(), end_date.isoformat()))
     deleted_stats = cursor.fetchall()
@@ -213,7 +201,7 @@ def get_product_stats():
     deleted_data = {date: count for date, count in deleted_stats}
 
     # Заполняем данные для всех дней, даже если в какой-то день не было действий
-    dates = [(start_date + timedelta(days=i)).date().isoformat() for i in range(7)]
+    dates = [(start_date + timedelta(days=i)).isoformat() for i in range(7)]
     added_counts = [added_data.get(date, 0) for date in dates]
     deleted_counts = [deleted_data.get(date, 0) for date in dates]
 
@@ -258,11 +246,19 @@ def delete_product():
 # Маршрут для получения статистики
 @app.route('/get_stats')
 def get_stats():
-    days = int(request.args.get('days', 7))  # По умолчанию за последние 7 дней
+    # Получаем параметры из запроса
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
 
-    # Получаем текущую дату и дату N дней назад
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+    # Проверяем, что даты указаны
+    if not start_date or not end_date:
+        return jsonify({"status": "error", "message": "Необходимо указать начальную и конечную даты."}), 400
+
+    try:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"status": "error", "message": "Неверный формат даты. Используйте YYYY-MM-DD."}), 400
 
     db_name = "products.db"
     conn = sqlite3.connect(db_name)
@@ -272,7 +268,7 @@ def get_stats():
     cursor.execute('''
         SELECT DATE(timestamp) as date, COUNT(*) as count
         FROM product_logs
-        WHERE action = 'added' AND timestamp >= ? AND timestamp <= ?
+        WHERE action = 'added' AND DATE(timestamp) >= ? AND DATE(timestamp) <= ?
         GROUP BY DATE(timestamp)
     ''', (start_date.isoformat(), end_date.isoformat()))
     added_stats = cursor.fetchall()
@@ -281,7 +277,7 @@ def get_stats():
     cursor.execute('''
         SELECT DATE(timestamp) as date, COUNT(*) as count
         FROM product_logs
-        WHERE action = 'deleted' AND timestamp >= ? AND timestamp <= ?
+        WHERE action = 'deleted' AND DATE(timestamp) >= ? AND DATE(timestamp) <= ?
         GROUP BY DATE(timestamp)
     ''', (start_date.isoformat(), end_date.isoformat()))
     deleted_stats = cursor.fetchall()
@@ -292,8 +288,13 @@ def get_stats():
     added_data = {date: count for date, count in added_stats}
     deleted_data = {date: count for date, count in deleted_stats}
 
-    # Заполняем данные для всех дней, даже если в какой-то день не было действий
-    dates = [(start_date + timedelta(days=i)).date().isoformat() for i in range(days)]
+    # Заполняем данные для всех дней в указанном периоде
+    dates = []
+    current_date = start_date
+    while current_date <= end_date:
+        dates.append(current_date.isoformat())
+        current_date += timedelta(days=1)
+
     added_counts = [added_data.get(date, 0) for date in dates]
     deleted_counts = [deleted_data.get(date, 0) for date in dates]
 
@@ -302,6 +303,100 @@ def get_stats():
         "added": added_counts,
         "deleted": deleted_counts
     })
+
+@app.route('/save_shopping_list', methods=['POST'])
+def save_shopping_list():
+    data = request.json
+    name = data.get('name')
+    quantity = data.get('quantity')
+    measurement_type = data.get('measurement_type')
+
+    if not name or not quantity or not measurement_type:
+        return jsonify({"status": "error", "message": "Необходимо предоставить все данные"}), 400
+
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO shopping_list (name, quantity, measurement_type)
+            VALUES (?, ?, ?)
+        ''', (name, quantity, measurement_type))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({"status": "error", "message": "Ошибка при сохранении данных"}), 500
+    finally:
+        conn.close()
+
+    return jsonify({"status": "success", "message": "Продукт добавлен в список покупок"})
+
+@app.route('/get_expiring_products')
+def get_expiring_products():
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    # Получаем текущую дату
+    current_date = datetime.now().date()
+
+    # Получаем продукты, срок годности которых истекает в ближайшие 7 дней или уже истек
+    cursor.execute('''
+        SELECT name, expiry_date, 
+               (julianday(expiry_date) - julianday(?)) as days_until_expiry
+        FROM products
+        WHERE julianday(expiry_date) - julianday(?) <= 7
+        ORDER BY expiry_date
+    ''', (current_date.isoformat(), current_date.isoformat()))
+    expiring_products = cursor.fetchall()
+
+    conn.close()
+
+    # Преобразуем данные в JSON
+    products = []
+    for product in expiring_products:
+        days_until_expiry = int(product[2])
+        status = "просрочен" if days_until_expiry < 0 else f"истекает через {days_until_expiry} дней"
+        products.append({
+            "name": product[0],
+            "expiry_date": product[1],
+            "status": status
+        })
+
+    return jsonify(products)
+
+@app.route('/get_shopping_list')
+def get_shopping_list():
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM shopping_list')
+    shopping_list = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify(shopping_list)
+
+@app.route('/delete_shopping_item', methods=['POST'])
+def delete_shopping_item():
+    data = request.json
+    item_id = data.get('id')
+
+    if not item_id:
+        return jsonify({"status": "error", "message": "Необходимо предоставить ID продукта"}), 400
+
+    db_name = "products.db"
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM shopping_list WHERE id = ?', (item_id,))
+        conn.commit()
+    except sqlite3.Error as e:
+        return jsonify({"status": "error", "message": f"Ошибка при удалении продукта: {e}"}), 500
+    finally:
+        conn.close()
+
+    return jsonify({"status": "success", "message": "Продукт удален из списка покупок"})
 
 # Маршрут для получения данных
 @app.route('/get_products')
@@ -332,6 +427,10 @@ def analytics():
 @app.route('/Main')
 def Main():
     return render_template('Main.html')
+
+@app.route('/shopping_list')
+def shopping_list():
+    return render_template('shopping_list.html')
 
 # Маршрут для проверки обнаружения QR-кода
 @app.route('/qr_detected')
