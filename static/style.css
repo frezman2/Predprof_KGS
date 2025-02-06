@@ -2,10 +2,67 @@ main {
     padding: 20px;
 }
 
+/* Стили для фильтров (плашки с датами и кнопка "Применить") */
 .filters {
     display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
+    align-items: center;
+    gap: 10px;
+}
+
+.filters label {
+    font-weight: bold;
+    color: #333;
+}
+
+.filters input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.filters input[type="date"]:focus {
+    border-color: #28a745;
+    outline: none;
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+}
+
+#applyDateRange {
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#applyDateRange:hover {
+    background-color: #218838;
+}
+
+#applyDateRange:active {
+    background-color: #1e7e34;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters input[type="date"] {
+        width: 100%;
+    }
+
+    #applyDateRange {
+        width: 100%;
+    }
 }
 
 canvas {
@@ -51,7 +108,7 @@ canvas {
     border-radius: 5px;
     background-color: #f1f1f1;
     position: relative;
-    width: fit-content; /* Adjust width to fit content */
+    width: fit-content;
 }
 
 .item::before {
@@ -75,23 +132,75 @@ canvas {
     margin: 0;
 }
 
+/* Стили для всех модальных окон */
 .modal {
-    display: none;
+    display: none; /* Скрыто по умолчанию */
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
     justify-content: center;
     align-items: center;
+    z-index: 1000; /* Убедитесь, что окно поверх других элементов */
 }
 
+/* Стили для содержимого модального окна */
 .modal-content {
     background-color: white;
-    padding: 2rem;
+    padding: 20px;
+    border-radius: 10px; /* Закругленные углы */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+    width: 90%; /* Ширина окна */
+    max-width: 500px; /* Максимальная ширина */
+    margin: 0 auto; /* Центрирование */
+}
+
+/* Стили для заголовка модального окна */
+.modal-content h2 {
+    margin-top: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+/* Стили для текста внутри модального окна */
+.modal-content p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #555;
+}
+
+/* Стили для кнопок в модальных окнах */
+.modal-content button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
     border-radius: 5px;
-    text-align: center;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Стили для кнопки закрытия */
+.modal-content button#closeModal,
+.modal-content button#closeProductInfoModal {
+    background-color: #6c757d; /* Серый цвет */
+    color: white;
+}
+
+.modal-content button#closeModal:hover,
+.modal-content button#closeProductInfoModal:hover {
+    background-color: #5a6268; /* Темнее при наведении */
+}
+
+/* Стили для кнопки "ОК" */
+.modal-content button#okButton {
+    background-color: #28a745; /* Зеленый цвет */
+    color: white;
+}
+
+.modal-content button#okButton:hover {
+    background-color: #218838; /* Темнее при наведении */
 }
 
 #searchResults {
@@ -104,4 +213,96 @@ canvas {
 
 #searchResults h2 {
     margin-top: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+h1 {
+    text-align: center;
+    color: #333;
+}
+.shopping-list {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.add-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.add-item input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.add-item select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+}
+.add-item button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.add-item button:hover {
+    background-color: #218838;
+}
+.items-list {
+    list-style: none;
+    padding: 0;
+}
+.items-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.items-list li:last-child {
+    border-bottom: none;
+}
+.items-list li button {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.items-list li button:hover {
+    background-color: #c82333;
+}
+
+/* Стили для кнопок в окне сканирования QR-кода */
+#qrModal .modal-content button {
+    background-color: #007bff; /* Синий цвет */
+    color: white;
+}
+
+#qrModal .modal-content button:hover {
+    background-color: #0056b3; /* Темнее при наведении */
+}
+
+/* Стили для кнопок в окне информации о продукте */
+#productInfoModal .modal-content button {
+    background-color: #dc3545; /* Красный цвет */
+    color: white;
+}
+
+#productInfoModal .modal-content button:hover {
+    background-color: #c82333; /* Темнее при наведении */
 }

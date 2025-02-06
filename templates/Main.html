@@ -11,47 +11,14 @@
 <body>
     {% include 'header.html' %}
 
+    <select id="languageSelector">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+    </select>
+
     <div class="container mt-5 pt-4">
         <div class="categories">
-            <div class="category">
-                <div class="category-header">
-                    <span>Хлебобулочные изделия</span>
-                    <span>&#9662;</span>
-                </div>
-                <div class="items" id="bread">
-                    <p style="opacity: 0.5;">Товаров нет</p>
-                </div>
-            </div>
-
-            <div class="category">
-                <div class="category-header">
-                    <span>Молочные продукты</span>
-                    <span>&#9662;</span>
-                </div>
-                <div class="items" id="dairy">
-                    <p style="opacity: 0.5;">Товаров нет</p>
-                </div>
-            </div>
-
-            <div class="category">
-                <div class="category-header">
-                    <span>Фрукты и овощи</span>
-                    <span>&#9662;</span>
-                </div>
-                <div class="items" id="fruits">
-                    <p style="opacity: 0.5;">Товаров нет</p>
-                </div>
-            </div>
-
-            <div class="category">
-                <div class="category-header">
-                    <span>Мясо и птица</span>
-                    <span>&#9662;</span>
-                </div>
-                <div class="items" id="meat">
-                    <p style="opacity: 0.5;">Товаров нет</p>
-                </div>
-            </div>
+            <!-- Категории будут добавляться сюда динамически -->
         </div>
     </div>
 
@@ -59,10 +26,11 @@
         <h2>Результаты поиска</h2>
     </div>
 
+    <!-- Модальное окно для сканирования QR-кода -->
     <div class="modal" id="qrModal">
         <div class="modal-content">
             <h2>Сканировать QR-код</h2>
-            <img src="{{ url_for('video_feed') }}" width="640" height="480"/>
+            <img src="{{ url_for('video_feed') }}" width="100%" height="auto"/>
             <button id="closeModal">Закрыть</button>
         </div>
     </div>
@@ -70,8 +38,22 @@
     <div class="modal" id="qrDetectedModal">
         <div class="modal-content">
             <h2>QR-код отсканирован</h2>
-            <p id="qrData"></p>
             <button id="okButton">ОК</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно для информации о продукте -->
+    <div class="modal" id="productInfoModal">
+        <div class="modal-content">
+            <h2>Информация о продукте</h2>
+            <p id="productName"></p>
+            <p id="productType"></p>
+            <p id="productManufactureDate"></p>
+            <p id="productExpiryDate"></p>
+            <p id="productWeight"></p>
+            <p id="productNutritionValue"></p>
+            <p id="productMeasurementType"></p>
+            <button id="closeProductInfoModal">Закрыть</button>
         </div>
     </div>
 
