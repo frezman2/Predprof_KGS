@@ -11,6 +11,8 @@ qr_data = None
 qr_detected = False
 # Глобальная переменная для управления потоком сканирования
 scanning_active = False
+# Глобальная переменная для управления режимом (добавление или удаление)
+operation_mode = 'add'  # 'add' или 'delete'
 
 
 # Функция для создания базы данных и таблицы
@@ -93,14 +95,29 @@ def delete_from_database(product_id):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     try:
-        cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
-        conn.commit()
-        # Log the deletion
-        cursor.execute('''
-            INSERT INTO product_logs (product_id, action, timestamp)
-            VALUES (?, ?, ?)
-        ''', (product_id, 'deleted', datetime.now().date().isoformat()))
-        conn.commit()
+        # Проверяем количество товара
+        cursor.execute('SELECT quantity FROM products WHERE id = ?', (product_id,))
+        result = cursor.fetchone()
+
+        if result:
+            quantity = result[0]
+            if quantity > 1:
+                # Если количество больше 1, уменьшаем количество на 1
+                cursor.execute('UPDATE products SET quantity = quantity - 1 WHERE id = ?', (product_id,))
+            else:
+                # Если количество равно 1, удаляем товар
+                cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+
+            conn.commit()
+
+            # Логируем удаление
+            cursor.execute('''
+                INSERT INTO product_logs (product_id, action, timestamp)
+                VALUES (?, ?, ?)
+            ''', (product_id, 'deleted', datetime.now().date().isoformat()))
+            conn.commit()
+        else:
+            print(f"Продукт с ID {product_id} не найден в базе данных.")
     except sqlite3.Error as e:
         print(f"Ошибка при удалении продукта: {e}")
     finally:
@@ -118,7 +135,7 @@ def decode_qr_data(qr_data):
 
 # Генерация кадров с камеры и распознавание QR-кода
 def generate_frames():
-    global qr_data, qr_detected
+    global qr_data, qr_detected, operation_mode
     camera = cv2.VideoCapture(0)
 
     if not camera.isOpened():
@@ -151,10 +168,14 @@ def generate_frames():
                     qr_data = data
                     qr_detected = True
                     print(f"[+] QR Code detected, data: {data}")
-                    # Декодируем данные и сохраняем в базу данных
+
+                    # Декодируем данные
                     product_data = decode_qr_data(qr_data)
                     if product_data:
-                        save_to_database(product_data)
+                        if operation_mode == 'add':
+                            save_to_database(product_data)
+                        elif operation_mode == 'delete':
+                            delete_from_database(product_data['id'])
                     break  # Выход из цикла после обнаружения QR-кода
 
             # Кодируем кадр в формат JPEG
@@ -268,24 +289,17 @@ def get_product_logs():
     conn.close()
     return logs
 
-# Маршрут для удаления продукта
-@app.route('/delete_product', methods=['POST'])
-def delete_product():
+@app.route('/deleteProduct', methods=['POST'])
+def deleteProduct():
     data = request.json
-    qr_data = data.get('qr_data')
+    product_id = data.get('id')  # Используем 'id' вместо 'qr_data'
 
-    if not qr_data:
-        return jsonify({"status": "error", "message": "Необходимо предоставить данные QR-кода"}), 400
-
-    # Декодируем данные QR-кода
-    product_data = decode_qr_data(qr_data)
-    if not product_data:
-        return jsonify({"status": "error", "message": "Ошибка декодирования данных QR-кода"}), 400
+    if not product_id:
+        return jsonify({"status": "error", "message": "Необходимо предоставить ID продукта"}), 400
 
     # Удаляем продукт из базы данных
-    delete_from_database(product_data['id'])
-
-    return
+    delete_from_database(product_id)
+    return jsonify({"status": "success", "message": "Продукт успешно удален"})
 
 # Маршрут для получения статистики
 @app.route('/get_stats')
@@ -407,6 +421,18 @@ def get_expiring_products():
         })
 
     return jsonify(products)
+
+@app.route('/set_operation_mode', methods=['POST'])
+def set_operation_mode():
+    global operation_mode
+    data = request.json
+    mode = data.get('mode')  # 'add' или 'delete'
+
+    if mode not in ['add', 'delete']:
+        return jsonify({"status": "error", "message": "Неверный режим"}), 400
+
+    operation_mode = mode
+    return jsonify({"status": "success", "message": f"Режим установлен на {mode}"})
 
 @app.route('/get_shopping_list')
 def get_shopping_list():
