@@ -306,3 +306,23 @@ h1 {
 #productInfoModal .modal-content button:hover {
     background-color: #c82333; /* Темнее при наведении */
 }
+
+.modal-content button#closeModal,
+.modal-content button#closeProductInfoModal {
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-content button#closeModal:hover,
+.modal-content button#closeProductInfoModal:hover {
+    background-color: #5a6268;
+}
+
+.modal-content button#okButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.modal-content button#okButton:hover {
+    background-color: #218838;
+}

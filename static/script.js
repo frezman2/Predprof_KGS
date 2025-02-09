@@ -28,16 +28,50 @@ let isDeleteMode = false; // Флаг для режима удаления
 
 // Обработчик для кнопки "Добавить товар"
 addItemButton.addEventListener('click', () => {
-    isDeleteMode = false; // Режим добавления
-    qrModal.style.display = 'flex';
-    checkQRCode();
+    fetch('/set_operation_mode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mode: 'add' }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            qrModal.style.display = 'flex';
+            checkQRCode();
+        } else {
+            alert('Ошибка при установке режима');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при установке режима');
+    });
 });
 
 // Обработчик для кнопки "Удалить товар"
 deleteItemButton.addEventListener('click', () => {
-    isDeleteMode = true; // Режим удаления
-    qrModal.style.display = 'flex';
-    checkQRCode();
+    fetch('/set_operation_mode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mode: 'delete' }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            qrModal.style.display = 'flex';
+            checkQRCode();
+        } else {
+            alert('Ошибка при установке режима');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при установке режима');
+    });
 });
 
 closeModalButton.addEventListener('click', () => {
@@ -60,26 +94,18 @@ function checkQRCode() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                qrDataElement.textContent = `QR-код: ${data.data}`;
                 qrDetectedModal.style.display = 'flex';
                 qrModal.style.display = 'none';
 
                 // Если режим удаления, отправляем запрос на удаление
                 if (isDeleteMode) {
-                    deleteProduct(data.data);
+                    deleteProduct(data.data);  // data.data содержит ID продукта
                 } else {
-                    // Получаем информацию о продукте
-                    fetch('/get_products')
-                        .then(response => response.json())
-                        .then(products => {
-                            for (const category in products) {
-                                const product = products[category].find(p => p.id === data.data);
-                                if (product) {
-                                    showProductInfo(product);
-                                    break;
-                                }
-                            }
-                        });
+                    // Если режим добавления, добавляем товар
+                    const productData = decode_qr_data(data.data);
+                    if (productData) {
+                        save_to_database(productData);
+                    }
                 }
             } else {
                 setTimeout(checkQRCode, 1000);
@@ -120,27 +146,27 @@ function showNotification(title, message) {
 }
 
 // Функция для удаления продукта
-function deleteProduct(qrData) {
-    fetch('/delete_product', {
+function deleteProduct(productId) {
+    fetch('/deleteProduct', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ qr_data: qrData }),
+        body: JSON.stringify({ id: productId }),
     })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Товар успешно удален');
-                loadProducts(); // Перезагружаем список товаров
-            } else {
-                alert('Ошибка при удалении товара');
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Товар успешно удален');
+            loadProducts();  // Перезагружаем список товаров
+        } else {
             alert('Ошибка при удалении товара');
-        });
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при удалении товара');
+    });
 }
 
 window.addEventListener('click', (e) => {
@@ -253,7 +279,10 @@ function loadProducts() {
                     }
 
                     // Добавляем информацию о продукте
-                    item.innerHTML = `<p>${product.name} (${product.quantity} шт.)</p>`;
+                    item.innerHTML = `
+                        <p>${product.name} (${product.quantity} шт.)</p>
+                        <button onclick="deleteProduct('${product.id}')">Удалить</button>
+                    `;
                     item.addEventListener('click', () => {
                         showProductInfo(product);
                     });
