@@ -1,0 +1,23 @@
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+.footer {
+    margin-top: auto;
+    padding: 20px 0;
+    background-color: #f8f9fa;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+.social-icons a {
+    margin: 0 10px;
+    color: #333;
+    text-decoration: none;
+}
+.social-icons a:hover {
+    color: #007bff;
+}
