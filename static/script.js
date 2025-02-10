@@ -82,6 +82,7 @@ okButton.addEventListener('click', () => {
     qrDetectedModal.style.display = 'none';
     qrModal.style.display = 'none';
     loadProducts(); // Перезагружаем товары после удаления или добавления
+    checkQRCode(); // Продолжаем сканирование
 });
 
 closeProductInfoModalButton.addEventListener('click', () => {
@@ -107,9 +108,15 @@ function checkQRCode() {
                         save_to_database(productData);
                     }
                 }
+                // Продолжаем сканирование после обработки QR-кода
+                setTimeout(checkQRCode, 1000);
             } else {
                 setTimeout(checkQRCode, 1000);
             }
+        })
+        .catch(error => {
+            console.error('Ошибка при проверке QR-кода:', error);
+            setTimeout(checkQRCode, 1000);
         });
 }
 
@@ -158,7 +165,25 @@ function deleteProduct(productId) {
     .then(data => {
         if (data.status === 'success') {
             alert('Товар успешно удален');
-            loadProducts();  // Перезагружаем список товаров
+            // Удаляем элемент из DOM
+            const item = document.querySelector(`.item[data-id="${productId}"]`);
+            if (item) {
+                const quantityElement = item.querySelector('p');
+                const quantityText = quantityElement.textContent;
+                const quantity = parseInt(quantityText.match(/\d+/)[0]);
+                if (quantity > 1) {
+                    // Уменьшаем количество на 1
+                    quantityElement.textContent = quantityText.replace(/\d+/, quantity - 1);
+                } else {
+                    // Удаляем элемент, если количество равно 1
+                    item.remove();
+                }
+            }
+            // Проверяем, есть ли еще элементы в результатах поиска
+            const searchResults = document.getElementById('searchResults');
+            if (searchResults.children.length === 0) {
+                searchResults.innerHTML = '<p style="opacity: 0.5;">Товаров не найдено</p>';
+            }
         } else {
             alert('Ошибка при удалении товара');
         }
@@ -265,6 +290,7 @@ function loadProducts() {
                 products.forEach(product => {
                     const item = document.createElement('div');
                     item.className = 'item';
+                    item.setAttribute('data-id', product.id); // Добавляем атрибут data-id
 
                     // Определяем статус срока годности
                     const currentDate = new Date();
@@ -281,10 +307,12 @@ function loadProducts() {
                     // Добавляем информацию о продукте
                     item.innerHTML = `
                         <p>${product.name} (${product.quantity} шт.)</p>
-                        <button onclick="deleteProduct('${product.id}')">Удалить</button>
+                        <button class="delete-button" onclick="deleteProduct('${product.id}')">Удалить</button>
                     `;
-                    item.addEventListener('click', () => {
-                        showProductInfo(product);
+                    item.addEventListener('click', (event) => {
+                        if (!event.target.classList.contains('delete-button')) {
+                            showProductInfo(product);
+                        }
                     });
                     itemsContainer.appendChild(item);
                 });
@@ -363,6 +391,7 @@ function searchProducts() {
                         found = true;
                         const item = document.createElement('div');
                         item.className = 'item';
+                        item.setAttribute('data-id', product.id); // Добавляем атрибут data-id
 
                         // Определяем статус срока годности
                         const currentDate = new Date();
@@ -376,11 +405,15 @@ function searchProducts() {
                             item.classList.add('expiring');
                         }
 
+                        // Добавляем информацию о продукте
                         item.innerHTML = `
-                            <p>${product.name} (${product.weight} ${product.measurement_type})</p>
+                            <p>${product.name} (${product.quantity} шт.)</p>
+                            <button class="delete-button" onclick="deleteProduct('${product.id}')">Удалить</button>
                         `;
-                        item.addEventListener('click', () => {
-                            showProductInfo(product);
+                        item.addEventListener('click', (event) => {
+                            if (!event.target.classList.contains('delete-button')) {
+                                showProductInfo(product);
+                            }
                         });
                         searchResults.appendChild(item);
                     }
