@@ -133,7 +133,7 @@ def decode_qr_data(qr_data):
         print("Ошибка декодирования JSON:", e)
         return None
 
-# Генерация кадров с камеры и распознавание QR-кода
+# Функция для генерации кадров с камеры и распознавания QR-кода
 def generate_frames():
     global qr_data, qr_detected, operation_mode
     camera = cv2.VideoCapture(0)
@@ -158,12 +158,6 @@ def generate_frames():
             data, bbox, _ = detector.detectAndDecode(frame)
 
             if bbox is not None:
-                bbox = bbox.astype(int)
-                for i in range(len(bbox)):
-                    pt1 = tuple(bbox[i][0])
-                    pt2 = tuple(bbox[(i + 1) % len(bbox)][0])
-                    cv2.line(frame, pt1, pt2, color=(255, 0, 0), thickness=2)
-
                 if data:
                     qr_data = data
                     qr_detected = True
@@ -176,7 +170,14 @@ def generate_frames():
                             save_to_database(product_data)
                         elif operation_mode == 'delete':
                             delete_from_database(product_data['id'])
-                    break  # Выход из цикла после обнаружения QR-кода
+
+                    # Отправляем сигнал на фронтенд, что QR-код отсканирован
+                    qr_detected = True  # Устанавливаем флаг
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + cv2.imencode('.jpg', frame)[1].tobytes() + b'\r\n')
+                    time.sleep(1)  # Даем время для обработки
+                    qr_detected = False  # Сбрасываем флаг после обработки
+                    continue  # Продолжаем сканирование
 
             # Кодируем кадр в формат JPEG
             ret, buffer = cv2.imencode('.jpg', frame)

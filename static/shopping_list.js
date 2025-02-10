@@ -28,6 +28,7 @@ function addProduct() {
         .then(data => {
             if (data.status === 'success') {
                 console.log('Продукт добавлен в список покупок');
+                loadShoppingList();
             } else {
                 console.error('Ошибка при добавлении продукта:', data.message);
             }
